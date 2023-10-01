@@ -297,6 +297,7 @@ class Cursor:
         operation = self.__handle_unnest(operation)
         operation = self.__handle_true_false(operation)
         operation = operation.replace(" UNION DISTINCT ", " UNION ")
+        operation = operation.replace(" NOT ENFORCED", "")
 
         if operation:
             try:

@@ -625,13 +625,23 @@ class BigQueryTypeCompiler(GenericTypeCompiler):
 
 class BigQueryDDLCompiler(DDLCompiler):
 
-    # BigQuery has no support for foreign keys.
+    # BigQuery has only declarative support for foreign keys, but does not enforce them.
     def visit_foreign_key_constraint(self, constraint):
-        return None
+        bq_opts = constraint.table.dialect_options["bigquery"]
+        if not bq_opts["emit_constraints"]:
+            return None
 
-    # BigQuery has no support for primary keys.
+        constraint_def = super().visit_foreign_key_constraint(constraint)
+        return f"{constraint_def} NOT ENFORCED"
+
+    # BigQuery has only declarative support for primary keys, but does not enforce them.
     def visit_primary_key_constraint(self, constraint):
-        return None
+        bq_opts = constraint.table.dialect_options["bigquery"]
+        if not bq_opts["emit_constraints"]:
+            return None
+
+        constraint_def = super().visit_primary_key_constraint(constraint)
+        return f"{constraint_def} NOT ENFORCED"
 
     # BigQuery has no support for unique constraints.
     def visit_unique_constraint(self, constraint):
