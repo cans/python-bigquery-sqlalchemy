@@ -36,7 +36,7 @@ import sqlalchemy.sql.functions
 import sqlalchemy.sql.sqltypes
 import sqlalchemy.sql.type_api
 from sqlalchemy.exc import NoSuchTableError
-from sqlalchemy import util
+from sqlalchemy import schema, util
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.compiler import (
     SQLCompiler,
@@ -651,13 +651,11 @@ class BigQueryDDLCompiler(DDLCompiler):
         bq_opts = table.dialect_options["bigquery"]
         opts = []
 
-        if ("description" in bq_opts) or table.comment:
-            description = process_string_literal(
-                bq_opts.get("description", table.comment)
-            )
+        if comment := (bq_opts["description"] or table.comment):
+            description = process_string_literal(comment)
             opts.append(f"description={description}")
 
-        if "friendly_name" in bq_opts:
+        if bq_opts["friendly_name"]:
             opts.append(
                 "friendly_name={}".format(
                     process_string_literal(bq_opts["friendly_name"])
@@ -770,6 +768,16 @@ class BigQueryDialect(DefaultDialect):
         sqlalchemy.sql.sqltypes.TIMESTAMP: BQTimestamp,
         sqlalchemy.sql.sqltypes.ARRAY: BQArray,
     }
+    construct_arguments = [
+        (
+            schema.Table,
+            {
+                "emit_constraints": False,
+                "description": None,
+                "friendly_name": None,
+            },
+        ),
+    ]
 
     def __init__(
         self,
